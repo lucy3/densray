@@ -52,9 +52,10 @@ embeds.filter(set([k for k, v in Ltrain.L['original']])
 embeds.store(config['store'] + ",embeddings.txt")
 
 if config['storedict']:
+    config['logger'].info("Storing binary version of train dict.")
     # store binary version of train dict
     Ltrain.L[config['storedict_version']] = Ltrain.L['original']
     Ltrain.filter_words(embeds.Wset)
     Ltrain.version = config['storedict_version']
-    Ltrain.binarise()
+    Ltrain.binarise() 
     Ltrain.store(config['store'] + ",ltrainbinary.txt", 'countable')

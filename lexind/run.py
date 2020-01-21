@@ -83,7 +83,7 @@ if not config['allow_train_test_overlap']:
     # remove potential train/test overlap
     Ltrain.filter_words(set([k for k, v in Ltrain.L[Ltrain.version]]) - set([k for k, v in Ltest.L[Ltest.version]]))
 
-Ltrain.binarise()
+#Ltrain.binarise()
 
 # filter embeddings for faster processing
 embeds.filter(set([k for k, v in Ltrain.L[Ltrain.version]]) | set([k for k, v in Ltest.L[Ltest.version]]))

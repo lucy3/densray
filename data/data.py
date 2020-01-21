@@ -137,7 +137,7 @@ class Lexicon(object):
             version: whether the lexicon is countable, continuous or a ranking; countable has binary (integer) values, continuous float values and ranking reflects a ranking, but the actual values are irrelevant.
         """
         self.path = path
-        infile = open(self.path, 'r')
+        infile = open(self.path, 'rU', encoding='utf8',errors='replace')
         lexicon = []
         count = 0
         for i, line in enumerate(infile):

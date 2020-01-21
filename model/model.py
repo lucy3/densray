@@ -104,9 +104,36 @@ class DensRay(object):
             self.prepare_data_continuous()
             self.computeA_continuous(
                 normalize_D=normalize_D, normalize_labels=normalize_labels)
+        elif model == 'trinary': 
+            self.prepare_data_trinary()
+            self.computeA_trinary_part1(normalize_D=normalize_D)
+            self.computeA_binary_part2(weights=weights)
         else:
             raise NotImplementedError
         self.compute_trafo()
+
+    def prepare_data_trinary(self):
+        Lrel = [(k, v)
+                for k, v in self.lexic.L['countable'] if k in self.embed.Wset]
+        values = set([v for k, v in Lrel])
+        assert len(values) == 3
+        v1, v2, v3 = values
+        indexpos = []
+        indexneg = []
+        indexneut = []
+        for k, v in Lrel:
+            if v == v1:
+                indexpos.append(self.embed.W.index(k))
+            elif v == v2:
+                indexneg.append(self.embed.W.index(k))
+            else: 
+                indexneut.append(self.embed.W.index(k))
+        self.Xpos = self.embed.X[indexpos, :]
+        self.Xneg = self.embed.X[indexneg, :]
+        self.Xneut = self.embed.X[indexneut, :]
+        self.npos = self.Xpos.shape[0]
+        self.nneg = self.Xneg.shape[0]
+        self.nneut = self.Xneut.shape[0]
 
     def prepare_data_binary(self):
         """Data preparation function for the binary model
@@ -184,6 +211,35 @@ class DensRay(object):
             fname: path where to store the transformation.
         """
         np.save(fname, self.T)
+
+    def computeA_trinary_part1(self, normalize_D=True):
+        dim = self.Xpos.shape[1]
+        self.A_equal = np.zeros((dim, dim))
+        self.A_unequal = np.zeros((dim, dim))
+        for ipos in tqdm(range(self.npos), desc="compute matrix part1", leave=False):
+            v = self.Xpos[ipos:ipos + 1, :].transpose()
+            self.A_equal += self.outer_product_sub_binary(
+                v, self.Xpos, normalize_D)
+            self.A_unequal += self.outer_product_sub_binary(
+                v, self.Xneg, normalize_D)
+            self.A_unequal += self.outer_product_sub_binary(
+                v, self.Xneut, normalize_D)
+        for ineg in tqdm(range(self.nneg), desc="compute matrix part2", leave=False):
+            v = self.Xneg[ineg:ineg + 1, :].transpose()
+            self.A_equal += self.outer_product_sub_binary(
+                v, self.Xneg, normalize_D)
+            self.A_unequal += self.outer_product_sub_binary(
+                v, self.Xpos, normalize_D)
+            self.A_unequal += self.outer_product_sub_binary(
+                v, self.Xneut, normalize_D)
+        for ineut in tqdm(range(self.nneut), desc="compute matrix part3", leave=False):
+            v = self.Xneut[ineut:ineut + 1, :].transpose()
+            self.A_equal += self.outer_product_sub_binary(
+                v, self.Xneut, normalize_D)
+            self.A_unequal += self.outer_product_sub_binary(
+                v, self.Xpos, normalize_D)
+            self.A_unequal += self.outer_product_sub_binary(
+                v, self.Xneg, normalize_D)
 
     def computeA_binary_part1(self, normalize_D=True):
         """First part of computing the matrix A.
